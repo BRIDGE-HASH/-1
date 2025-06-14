@@ -1,0 +1,97 @@
+《印巴冲突的舆情分析报告》
+开发环境
+
+开发平台：扣子平台（Douzi Studio）
+
+本地工具：Jupyter Notebook（Python 3.9）
+
+使用库：requests、pandas、matplotlib、wordcloud、sklearn、jieba、seaborn 等
+
+API服务：百度 NLP 情感分析 API
+一、提示词与内容生成
+
+提示词1：生成舆情分析报告结构框架
+你现在是一个舆情分析报告的专家，请你生成一份完整的舆情报告结构目录，标题为《印巴冲突的舆情分析报告》，字数不少于2000字，内容包含事件回顾、情绪分析、主体聚类、传播路径等，符合高校课程作业要求。
+系统生成章节如下：
+
+绪论
+
+事件回顾
+
+情感倾向分析
+
+舆论主体聚类分析
+
+热点话题识别与观点分析
+
+舆情发展趋势与传播路径建模
+
+研究结论与建议
+
+研究总结与展望
+
+附录与参考文献
+提示词2：撰写情感倾向分析章节内容
+请为第三章《情感倾向分析》撰写完整内容，要求包含中文社交媒体评论的数据分析、情绪比例可视化图、时间趋势图等内容，并附上相应Python代码。
+二、主要代码片段与数据分析
+
+2.1 数据清洗与分词
+import jieba
+import pandas as pd
+
+# 读取数据
+comments_df = pd.read_csv("data/indopak_comments.csv")
+
+# 分词
+comments_df["words"] = comments_df["comment"].apply(lambda x: "/".join(jieba.cut(x)))
+2.2 情感分析调用（百度API）
+from aip import AipNlp
+
+APP_ID = '你的AppID'
+API_KEY = '你的ApiKey'
+SECRET_KEY = '你的SecretKey'
+
+client = AipNlp(APP_ID, API_KEY, SECRET_KEY)
+
+def get_sentiment(text):
+    result = client.sentimentClassify(text)
+    if 'items' in result:
+        item = result['items'][0]
+        return item['sentiment'], item['confidence'], item['positive_prob']
+    else:
+        return None, None, None
+
+comments_df[['sentiment', 'confidence', 'positive_prob']] = comments_df['comment'].apply(
+    lambda x: pd.Series(get_sentiment(x))
+)
+2.3 情绪占比饼图
+import matplotlib.pyplot as plt
+
+labels = ['消极', '中性', '积极']
+sizes = comments_df['sentiment'].value_counts().sort_index()
+plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140)
+plt.title('评论情绪分布')
+plt.axis('equal')
+plt.savefig("figures/sentiment_pie.png")
+plt.show()
+2.4 情绪随时间变化趋势
+comments_df['date'] = pd.to_datetime(comments_df['date'])
+time_group = comments_df.groupby(comments_df['date'].dt.date)['sentiment'].mean()
+
+plt.plot(time_group.index, time_group.values)
+plt.title('每日平均情绪得分变化趋势')
+plt.xlabel('日期')
+plt.ylabel('平均情绪得分')
+plt.xticks(rotation=45)
+plt.savefig("figures/sentiment_trend.png")
+plt.show()
+三、模型与方法总结
+
+使用百度 NLP 接口进行情感分类，判断为：0 消极 / 1 中性 / 2 积极；
+
+对评论数据进行分词、清洗后统计频次，用词云展示；
+
+利用 matplotlib 和 seaborn 绘图展示分析结果；
+
+使用 sklearn 进行KMeans聚类以提取评论中主要舆论群体。
+
